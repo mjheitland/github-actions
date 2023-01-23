@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/mjheitland/github-actions/compare/v1.0.0...v1.0.1) (2023-01-23)
+
+
+### Bug Fixes
+
+* README.md ([551f44d](https://github.com/mjheitland/github-actions/commit/551f44d06101f84f6203bd40c817dd85e0248c12))
+* README.md ([3174c1e](https://github.com/mjheitland/github-actions/commit/3174c1e59bdbc35c15ad363e54cc1ecf392948ac))
+
 ## [1.0.35](https://github.com/mjheitland/github-actions/compare/v1.0.34...v1.0.35) (2023-01-23)
 
 
