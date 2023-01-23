@@ -80,11 +80,6 @@ jobs:
           role-to-assume: ${{ secrets.DEPLOY_ROLE }}
           aws-region: ${{ secrets.REGION }}
 
-      - name: grant-private-repo-access
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SECRET_REPO_DEPLOY_KEY }}
-
       - name: destroy
         uses: mjheitland/github-actions/terraform-destroy@v1
         with:
