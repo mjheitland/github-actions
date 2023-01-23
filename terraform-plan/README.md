@@ -110,5 +110,4 @@ jobs:
         with:
           backend: ${{ secrets.BACKEND }}
           workspace: ${{ secrets.WORKSPACE }}
-          secret-repo-deploy-key: ${{ secrets.SECRET_REPO_DEPLOY_KEY }}
 ```
