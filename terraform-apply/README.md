@@ -72,8 +72,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
   id-token: write
+  contents: read
   issues: write
   pull-requests: write
   security-events: write
@@ -84,10 +84,40 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  apply:
-    name: apply
+
+  validate-and-plan:
+    name: validate-and-plan
     runs-on: ubuntu-latest
     steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: assume-role
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.DEPLOY_ROLE }}
+          aws-region: ${{ secrets.REGION }}
+
+      - name: validate-and-plan
+        uses: mjheitland/github-actions/terraform-plan@v1
+        with:
+          backend: ${{ secrets.BACKEND }}
+          workspace: ${{ secrets.WORKSPACE }}
+
+  apply:
+    name: apply
+    environment: dev
+    runs-on: ubuntu-latest
+    needs: [validate-and-plan]
+    steps:
+      - name: prepare
+        id: prepare
+        shell: bash
+        run: |
+          # create artifacts directory
+          # (won't be changed if it already exists from a previous run of `terraform-plan`)
+          mkdir -p .artifacts
+          ls -al .artifacts
 
       - name: checkout
         uses: actions/checkout@v3
@@ -98,17 +128,22 @@ jobs:
           role-to-assume: ${{ secrets.DEPLOY_ROLE }}
           aws-region: ${{ secrets.REGION }}
 
-      - name: grant-private-repo-access
-        uses: webfactory/ssh-agent@v0.7.0
+      - name: download-plan
+        uses: actions/download-artifact@v3
         with:
-          ssh-private-key: ${{ secrets.SECRET_REPO_DEPLOY_KEY }}
+          name: plan-artifacts
+          path: .artifacts
 
-      - name: plan
-        uses: mjheitland/github-actions/terraform-plan@v1
-        with:
-          backend: ${{ secrets.BACKEND }}
-          workspace: ${{ secrets.WORKSPACE }}
+      - name: show
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          ls -al .artifacts
+        continue-on-error: true
 
       - name: apply
         uses: mjheitland/github-actions/terraform-apply@v1
+        with:
+          backend: ${{ secrets.BACKEND }}
+          workspace: ${{ secrets.WORKSPACE }}
 ```

@@ -99,11 +99,6 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
 
-      - name: grant-private-repo-access
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SECRET_REPO_DEPLOY_KEY }}
-
       - name: assume-role
         uses: aws-actions/configure-aws-credentials@v1
         with:
