@@ -12,6 +12,15 @@ It runs the following steps:
 ```yaml
 - uses: mjheitland/github-actions/terraform-apply@v1
   with:
+    # Path to the Terraform backend file relative to the working directory.
+    # Required: No
+    backend: ''
+
+    # Optional GitHub Token when elevated permissions are needed
+    # that cannot be provided by the default token
+    # Required: No
+    github-token: ${{ github.token }}
+
     # Name of the Terraform plan file.
     # Default: .artifacts/terraform.plan
     # Required: No
@@ -21,6 +30,10 @@ It runs the following steps:
     # Default: . (root of the repository)
     # Required: No
     working-directory: '.'
+
+    # The Terraform workspace name
+    # Required: No
+    workspace: 'default'
 ```
 
 ## Required permissions
