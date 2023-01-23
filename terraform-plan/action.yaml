@@ -130,35 +130,6 @@ runs:
         name: plan-artifacts
         path: .artifacts
 
-    - name: show1
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        ls -al .artifacts
-        ls -al ${{ runner.temp }}
-      continue-on-error: true
-
-    - name: download-plan
-      uses: actions/download-artifact@v3
-      with:
-        name: plan-artifacts
-        path: ${{ runner.temp }}
-
-    - name: show2
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        ls -al ${{ runner.temp }}
-      continue-on-error: true
-
-    - name: show2
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        ls -al .artifacts
-        ls -al ${{ runner.temp }}
-      continue-on-error: true
-
     - name: exit-on-error
       id: exit-on-error
       shell: bash
