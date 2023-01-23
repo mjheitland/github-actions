@@ -5,6 +5,17 @@ description: |
 
 inputs:
 
+  backend:
+    description: Terraform backend configuration file (default is none)
+    required: false
+
+  github-token:
+    description: |
+      Optional GitHub Token when elevated permissions are needed
+      that cannot be provided by the default token (default is `github.token`)
+    required: false
+    default: ${{ github.token }}
+
   plan-file:
     description: Path to the Terraform plan file
     default: .artifacts/terraform.plan
@@ -13,6 +24,11 @@ inputs:
   working-directory:
     description: Directory containing the Terraform module code. (default = ".")
     default: '.'
+    required: false
+
+  workspace:
+    description: Terraform workspace
+    default: 'default'
     required: false
 
 runs:
@@ -26,6 +42,34 @@ runs:
         # (won't be changed if it already exists from a previous run of `terraform-plan`)
         mkdir -p .artifacts
 
+    - name: setup-terraform
+      id: setup-terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+        terraform_version: ${{ inputs.terraform-version }}
+
+    - name: init
+      id: init
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        backend=${{ inputs.backend }}
+
+        if [ -z "${backend}"]; then
+          terraform init -input=false -upgrade
+        else
+          terraform init -input=false -upgrade -backend-config="${backend}"
+        fi
+
+    - name: "select-workspace: ${{ inputs.workspace }}"
+      id: select-workspace
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: terraform workspace select ${{ inputs.workspace }} || terraform workspace new ${{ inputs.workspace }}
+
     - name: apply
       id: apply
       shell: bash
@@ -36,7 +80,7 @@ runs:
           exit 1
         fi
 
-        terraform show -no-color ${{ inputs.plan-file }} > .artifacts/terraform-plan.txt
+        terraform show -no-color ${{ inputs.plan-file }}
         terraform apply -no-color -auto-approve -input=false ${{ inputs.plan-file }} | tee .artifacts/terraform-apply.txt
 
     - name: output
