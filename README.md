@@ -1,3 +1,3 @@
 # github-actions
 
-> A collection of reusable GitHub workflows to deploy infrastructure into AWS.
+> A collection of reusable GitHub workflows to deploy infrastructure into AWS accounts.
