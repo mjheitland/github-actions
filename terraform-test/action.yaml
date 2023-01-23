@@ -1,0 +1,108 @@
+name: terraform-test
+
+description: |
+  Represents a GitHub reusable workflow triggered either manually or on pull
+  requests to `main` to test infrastructure deployments.
+  All subfolders of `examples` are automatically deployed and torn down running `terraform apply` and `terraform destroy`.
+  If some of the examples have shared resources that take a while to be set up (e.g. AWS Managed Directory), this code
+  can be separated in a `setup` folder.
+
+inputs:
+  github-token:
+    description: |
+      Optional GitHub Token when elevated permissions are needed that cannot be
+      provided by the default token
+    required: false
+    default: ${{ github.token }}
+  go-version:
+    description: Go version used for running the terratest tests.
+    default: "1.18"
+    required: false
+  terraform-version:
+    description: Terraform version (default is 'latest')
+    default: latest
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: prepare
+      id: prepare
+      shell: bash
+      run: |
+        # create artifacts directory
+        mkdir -p .artifacts
+
+    - name: setup-terraform
+      id: setup-terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+        terraform_version: ${{ inputs.terraform-version }}
+
+    - name: setup-golang
+      id: setup-golang
+      uses: actions/setup-go@v3
+      with:
+        go-version: ${{ inputs.go-version }}
+
+    - name: go-get
+      id: go-get
+      shell: bash
+      run: |
+          go version
+          go get ./...
+          go mod tidy
+
+    - name: test-setup
+      id: test-setup
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+          if [ ! -d "./test/setup" ]; then
+            printf 'Path Not Found: %s. Skip step\n' "./test/setup"
+            exit 0
+          fi
+
+          terraform -chdir=test/setup init -upgrade
+          terraform -chdir=test/setup apply -auto-approve -input=false
+
+    - name: test
+      id: test
+      if: steps.test-setup.outcome != 'failure'
+      continue-on-error: true
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: go test -v ./test/integration | tee .artifacts/test-results.txt
+
+    - name: teardown
+      id: teardown
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+          if [ ! -d "./test/setup" ]; then
+            printf 'Path Not Found: %s. Skip step\n' "./test/setup"
+            exit 0
+          fi
+          terraform -chdir=test/setup apply -destroy -auto-approve -input=false
+
+    - name: publish-artifact
+      id: publish-artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-artifacts
+        path: .artifacts
+
+    - name: exit-on-error
+      id: exit-on-error
+      shell: bash
+      if: |
+        steps.test.outcome == 'failure'
+      run: |
+        printf 'ERROR - One or more steps failed in this pipeline.\n'
+        printf 'Results:\n'
+        printf 'Step "test"             : %s\n' "${{ steps.test.outcome }}"
+        exit 1

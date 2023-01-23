@@ -1,0 +1,47 @@
+name: terraform-release
+
+description: |
+  Generates a PR to creates a new release with three tags all pointing to the
+  last commit based on [semantic versioning](https://semver.org/)
+  and [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/#specification)
+
+runs:
+  using: composite
+  steps:
+    - name: release
+      id: release
+      uses: google-github-actions/release-please-action@v3
+      with:
+        release-type: terraform-module
+        signoff: "github-release[bot] <github-release-bot@mycompany.com>"
+        include-v-in-tag: true
+
+    - name: checkout
+      id: checkout
+      uses: actions/checkout@v3
+      if: ${{ steps.release.outputs.release_created }}
+      with:
+        persist-credentials: true
+        ref: "release-please--branches--main"
+
+    - name: add-tags
+      id: add-tags
+      if: ${{ steps.release.outputs.release_created }}
+      shell: bash
+      run: |
+        git config user.name github-release[bot]
+        git config user.email github-release-bot@mycompany.com
+
+        version=${{ steps.release.outputs.tag_name }}
+        printf 'release version: %s\n' "${{ inputs.version }}"
+        major_version=$(cut -d'.' -f1 <<<"${version}")
+        minor_version=$(cut -d'.' -f2 <<<"${version}")
+
+        git push origin :${major_version} || true
+        git push origin :${major_version}.${minor_version} || true
+        git tag -d ${major_version} || true
+        git tag -d ${major_version}.${minor_version} || true
+        git tag -a ${major_version} -m "Release ${major_version}"
+        git tag -a ${major_version}.${minor_version} -m "Release ${major_version}.${minor_version}"
+        git push origin ${major_version}
+        git push origin ${major_version}.${minor_version}

@@ -1,0 +1,84 @@
+name: terraform-destroy
+
+description: |
+  Action to run terraform destroy (based on workspace and backend file).
+
+inputs:
+  backend:
+    description: Terraform backend configuration file (default is none)
+    required: false
+  terraform-version:
+    description: Terraform version (default is 'latest')
+    default: latest
+    required: false
+  working-directory:
+    description: Directory containing the Terraform module code. (default = ".")
+    default: '.'
+    required: false
+  workspace:
+    description: Terraform workspace (default is 'default')
+    default: default
+    required: false
+
+runs:
+  using: composite
+  steps:
+
+    - name: prepare
+      id: prepare
+      shell: bash
+      run: |
+        # create artifacts directory
+        mkdir -p .artifacts
+
+    - name: setup-terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: ${{ inputs.terraform-version }}
+        terraform_wrapper: false
+
+    - name: init
+      id: init
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        backend=${{ inputs.backend }}
+
+        if [ -z "${backend}"]; then
+          terraform init -input=false -upgrade
+        else
+          terraform init -input=false -upgrade -backend-config="${backend}"
+        fi
+
+    - name: "select-workspace: ${{ inputs.workspace }}"
+      id: select-workspace
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: terraform workspace select ${{ inputs.workspace }} || terraform workspace new ${{ inputs.workspace }}
+
+    - name: destroy
+      id: destroy
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        terraform destroy -auto-approve | tee .artifacts/terraform-destroy.txt
+
+    - name: publish-artifact
+      id: publish-artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: destroy-artifacts
+        path: .artifacts
+
+    - name: exit-on-error
+      id: exit-on-error
+      shell: bash
+      if: |
+        steps.destroy.outcome == 'failure'
+      run: |
+        printf 'ERROR - One or more steps failed in this pipeline.\n'
+        printf 'Results:\n'
+        printf 'Step "destroy"             : %s\n' "${{ steps.destroy.outcome }}"
+        exit 1

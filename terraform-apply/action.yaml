@@ -1,0 +1,56 @@
+name: terraform-apply
+
+description: |
+  Action to run terraform apply for a root module based on an existing Terraform plan file.
+
+inputs:
+
+  plan-file:
+    description: Path to the Terraform plan file
+    default: .artifacts/terraform.plan
+    required: false
+
+  working-directory:
+    description: Directory containing the Terraform module code. (default = ".")
+    default: '.'
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: prepare
+      id: prepare
+      shell: bash
+      run: |
+        # create artifacts directory
+        # (won't be changed if it already exists from a previous run of `terraform-plan`)
+        mkdir -p .artifacts
+
+    - name: apply
+      id: apply
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if [ ! -f "${{ inputs.plan-file }}" ]; then
+          printf 'ERROR - File Not Found: %s. This action requires the Terraform plan file to be created first.' "${{ inputs.plan-file }}"
+          exit 1
+        fi
+
+        terraform show -no-color ${{ inputs.plan-file }} > .artifacts/terraform-plan.txt
+        terraform apply -no-color -auto-approve -input=false ${{ inputs.plan-file }} | tee .artifacts/terraform-apply.txt
+
+    - name: output
+      id: output
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        terraform output -json | \
+          jq 'to_entries | map_values(.value + { key: .key }) | map(select(.sensitive | not)) | from_entries' \
+          >.artifacts/output.json
+
+    - name: publish
+      id: publish
+      uses: actions/upload-artifact@v3
+      with:
+        name: apply-artifacts
+        path: .artifacts

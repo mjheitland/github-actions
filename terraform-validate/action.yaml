@@ -1,0 +1,189 @@
+name: terraform-validate
+
+description: |
+  This action is usually run either manually or on a Pull Request to the `main` branch.
+  It runs various static code analyzers (`terraform validate`, `tflint`,
+  `checkov`).
+  It also checks that `README.md` was auto-generated running `terraform-docs`
+  and that the configuration code has been properly formatted with `terraform fmt`.
+
+inputs:
+  github-token:
+    description: |
+      Optional GitHub Token when elevated permissions are needed that cannot be
+      provided by the default token
+    required: false
+    default: ${{ github.token }}
+  terraform-version:
+    description: Terraform version (default is 'latest')
+    default: latest
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: prepare
+      id: prepare
+      shell: bash
+      run: |
+        # create artifacts directory
+        mkdir -p .artifacts
+
+    - name: setup-terraform
+      id: setup-terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+        terraform_version: ${{ inputs.terraform-version }}
+
+    - name: verify-docs
+      id: verify-docs
+      continue-on-error: true
+      uses: terraform-docs/gh-actions@v1
+      with:
+        config-file: .terraform-docs.yaml
+        output-format: markdown table
+        fail-on-diff: true
+
+    - name: upload-readme
+      shell: bash
+      run: cp README.md .artifacts/README.md
+
+    - name: format
+      id: format
+      continue-on-error: true
+      shell: bash
+      run: terraform fmt -recursive -check
+
+    - name: init
+      id: init
+      shell: bash
+      run: terraform init -upgrade
+
+    - name: validate
+      id: validate
+      continue-on-error: true
+      shell: bash
+      run: terraform validate -no-color
+
+    - name: cache
+      id: cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.tflint.d/plugins
+        key: tflint-${{ hashFiles('.tflint.hcl') }}
+
+    - name: setup-tflint
+      id: setup-tflint
+      uses: terraform-linters/setup-tflint@v3
+      with:
+        github_token: ${{ github.token }}
+
+    - name: setup-tflint-plugins
+      id: setup-tflint-plugins
+      shell: bash
+      run: |
+          # get the current architecture
+          arch=$(uname -m)
+
+          # normalize architecture
+          if [ "${arch}" = "x86_64" ]; then
+            arch="amd64"
+          elif [ "${arch}" = "aarch64" ]; then
+            arch="arm64"
+          fi
+
+          mkdir -p ~/.tflint.d/plugins
+
+          install_ruleset() {
+              __name="${1}"
+
+              curl -Lf --silent \
+                  "https://github.com/terraform-linters/tflint-ruleset-${__name}/releases/latest/download/tflint-ruleset-${__name}_linux_${arch}.zip" \
+                  -o ruleset.zip
+
+              unzip -o -q ruleset.zip -d ~/.tflint.d/plugins
+              rm -f ruleset.zip
+          }
+
+          # install rulesets
+          rulesets=("azurerm" "google" "aws")
+          for ruleset in "${rulesets[@]}"; do
+              install_ruleset "${ruleset}"
+          done
+
+          # add default configuration
+          if [ ! -f "${HOME}/.tflint.hcl" ]; then
+            cat <<'EOF' >"${HOME}/.tflint.hcl"
+          plugin "azurerm" {
+            enabled = true
+          }
+
+          plugin "aws" {
+            enabled    = true
+            deep_check = false
+          }
+
+          plugin "google" {
+            enabled    = true
+            deep_check = false
+          }
+          EOF
+          fi
+
+    - name: tflint
+      id: tflint
+      continue-on-error: true
+      shell: bash
+      run: |
+        tflint --version
+        tflint --init
+        tflint --format=compact .
+        tflint --format=sarif . >.artifacts/tflint.sarif
+
+    - name: checkov
+      id: checkov
+      continue-on-error: true
+      uses: bridgecrewio/checkov-action@master
+      with:
+        directory: .
+        # file: example/tfplan.json # optional: provide the path for resource to be scanned. This will override the directory if both are provided.
+        # check: CKV_AWS_1 # optional: run only a specific check_id. can be comma separated list
+        # skip_check: CKV_AWS_2 # optional: skip a specific check_id. can be comma separated list
+        quiet: true # optional: display only failed checks
+        # soft_fail: true # optional: do not return an error code if there are failed checks
+        framework: terraform # optional: run only on a specific infrastructure {cloudformation,terraform,kubernetes,all}
+        # output_format: sarif # optional: the output format, one of: cli, json, junitxml, github_failed_only, or sarif. Default: sarif
+        output_file_path: checkov.sarif # folder and name of results file
+        download_external_modules: true # optional: download external terraform modules from public git repositories and terraform registry
+        # var_file: ./testdir/gocd.yaml # optional: variable files to load in addition to the default files. Currently only supported for source Terraform and Helm chart scans.
+        # log_level: DEBUG # optional: set log level. Default WARNING
+        # config_file: path/this_file
+        # baseline: cloudformation/.checkov.baseline # optional: Path to a generated baseline file. Will only report results not in the baseline.
+        # container_user: 1000 # optional: Define what UID and / or what GID to run the container under to prevent permission issues
+
+    - name: publish-artifact
+      id: publish-artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: validation-artifacts
+        path: .artifacts
+
+    - name: exit-on-error
+      id: exit-on-error
+      shell: bash
+      if: |
+        steps.verify-docs.outcome == 'failure' ||
+        steps.format.outcome == 'failure' ||
+        steps.validate.outcome == 'failure' ||
+        steps.tflint.outcome == 'failure' ||
+        steps.checkov.outcome == 'failure'
+      run: |
+        printf 'ERROR - One or more steps failed in this pipeline.\n'
+        printf 'Results:\n'
+        printf 'Step "verify-docs"      : %s\n' "${{ steps.verify-docs.outcome }}"
+        printf 'Step "format"           : %s\n' "${{ steps.format.outcome }}"
+        printf 'Step "validate"         : %s\n' "${{ steps.validate.outcome }}"
+        printf 'Step "tflint"           : %s\n' "${{ steps.tflint.outcome }}"
+        printf 'Step "checkov"          : %s\n' "${{ steps.checkov.outcome }}"
+        exit 1
