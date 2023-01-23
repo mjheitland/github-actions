@@ -44,7 +44,6 @@ runs:
   using: composite
 
   steps:
-
     - name: prepare
       id: prepare
       shell: bash
