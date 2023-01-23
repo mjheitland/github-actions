@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.6](https://github.com/mjheitland/github-actions/compare/v1.0.5...v1.0.6) (2023-01-23)
+
+
+### Bug Fixes
+
+* add manual approval for apply ([#15](https://github.com/mjheitland/github-actions/issues/15)) ([0d4d079](https://github.com/mjheitland/github-actions/commit/0d4d079cd052b0492911703314bbcd02882ddde5))
+
 ## [1.0.5](https://github.com/mjheitland/github-actions/compare/v1.0.4...v1.0.5) (2023-01-23)
 
 
