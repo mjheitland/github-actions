@@ -44,6 +44,15 @@ runs:
   using: composite
 
   steps:
+    - uses: actions/github-script@v6
+      id: set-result
+      with:
+        script: return "Hello!"
+        result-encoding: string
+    - name: Get result
+      shell: bash
+      run: echo "${{steps.set-result.outputs.result}}"
+
     - name: prepare
       id: prepare
       shell: bash
@@ -97,17 +106,17 @@ runs:
         ls -al .artifacts
       continue-on-error: true
 
-    - name: create-plan-as-issue
-      id: create-plan-as-issue
-      uses: actions/github-script@v6
-      with:
-        script: |
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: '👋 Thanks for reporting!'
-          })
+    # - name: create-plan-as-issue
+    #   id: create-plan-as-issue
+    #   uses: actions/github-script@v6
+    #   with:
+    #     script: |
+    #       github.rest.issues.createComment({
+    #         issue_number: context.issue.number,
+    #         owner: context.repo.owner,
+    #         repo: context.repo.repo,
+    #         body: '👋 Thanks for reporting!'
+    #       })
 
     - name: post-comments
       if: |
