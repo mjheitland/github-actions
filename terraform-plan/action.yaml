@@ -44,6 +44,20 @@ runs:
   using: composite
 
   steps:
+
+    - name: create-plan-as-issue
+      id: create-plan-as-issue
+      uses: actions/github-script@v6
+      with:
+        script: |
+          console.log(context)
+          github.rest.pulls.createComment({
+            issue_number: context.pull.request_number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '👋 Thanks for reporting!'
+          })
+
     - name: prepare
       id: prepare
       shell: bash
@@ -96,18 +110,6 @@ runs:
         terraform show -no-color .artifacts/terraform.plan > .artifacts/terraform-plan.txt
         ls -al .artifacts
       continue-on-error: true
-
-    - name: create-plan-as-issue
-      id: create-plan-as-issue
-      uses: actions/github-script@v6
-      with:
-        script: |
-          github.rest.pulls.createComment({
-            issue_number: context.pull.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: '👋 Thanks for reporting!'
-          })
 
     - name: post-comments
       if: |
