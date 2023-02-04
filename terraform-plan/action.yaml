@@ -45,6 +45,27 @@ runs:
 
   steps:
 
+    - name: create-plan-as-issue1
+      id: create-plan-as-issue
+      uses: actions/github-script@v6
+      with:
+        script: |
+          console.log(context)
+
+    - name: create-plan-as-issue2
+      id: create-plan-as-issue
+      uses: actions/github-script@v6
+      with:
+        script: |
+          console.log(context.pull_request)
+
+    - name: create-plan-as-issue3
+      id: create-plan-as-issue
+      uses: actions/github-script@v6
+      with:
+        script: |
+          console.log(context.pull_request.number)
+
     - name: create-plan-as-issue
       id: create-plan-as-issue
       uses: actions/github-script@v6
