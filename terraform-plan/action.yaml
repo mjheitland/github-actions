@@ -99,7 +99,7 @@ runs:
 
     - name: create-plan-as-issue
       id: create-plan-as-issue
-      uses: actions/github-script@v6.4
+      uses: actions/github-script@v6
       with:
         script: |
           github.rest.issues.createComment({
