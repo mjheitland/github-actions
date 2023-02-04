@@ -95,7 +95,7 @@ runs:
         terraform plan -no-color -input=false -lock=false -out .artifacts/terraform.plan
         terraform show -no-color .artifacts/terraform.plan > .artifacts/terraform-plan.txt
         ls -al .artifacts
-        echo "myplan=$(cat .artifacts/terraform-plan.txt)" >> $GITHUB_ENV
+        echo "MY_PLAN=$(cat .artifacts/terraform-plan.txt)" >> $GITHUB_ENV
       continue-on-error: true
 
     - name: show-plan
@@ -103,7 +103,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        echo "myplan:=${{ myplan }}"
+        echo "myplan:=${{ secrets.MY_PLAN }}"
       continue-on-error: true
 
     - name: post-comments
