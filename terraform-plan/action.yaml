@@ -57,25 +57,22 @@ runs:
       uses: actions/github-script@v6
       with:
         script: |
-          console.log(context.pull_request)
+          console.log(context.payload.pull_request)
 
     - name: create-plan-as-issue3
       id: create-plan-as-issue3
       uses: actions/github-script@v6
       with:
         script: |
-          console.log(context.pull_request.number)
+          console.log(context.payload.pull_request.number)
 
     - name: create-plan-as-issue
       id: create-plan-as-issue
       uses: actions/github-script@v6
       with:
         script: |
-          console.log(context)
-          console.log(context.pull_request)
-          console.log(context.pull_request.number)
           github.rest.pulls.createComment({
-            issue_number: context.pull_request.number,
+            issue_number: context.payload.pull_request.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
             body: '👋 Thanks for reporting!'
