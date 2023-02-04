@@ -109,9 +109,11 @@ runs:
           #### Terraform Validation \`${{ steps.terraform-validate.outcome }}\`
           #### Terraform Plan \`${{ steps.terraform-plan.outcome }}\`
           <details><summary>Show Plan</summary>
+
           \`\`\`bash\n
           ${fs.readFileSync('.artifacts/terraform-plan.txt').toString()}
           \`\`\`
+
           </details>
           *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
           github.rest.issues.createComment({
