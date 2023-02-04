@@ -95,15 +95,8 @@ runs:
         terraform plan -no-color -input=false -lock=false -out .artifacts/terraform.plan
         terraform show -no-color .artifacts/terraform.plan > .artifacts/terraform-plan.txt
         ls -al .artifacts
+        echo "MY_PLAN=$(cat .artifacts/terraform-plan.txt)"
         echo "MY_PLAN=$(cat .artifacts/terraform-plan.txt)" >> $GITHUB_ENV
-      continue-on-error: true
-
-    - name: show-plan
-      id: show-plan
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        echo "myplan:=${{ env.MY_PLAN }}"
       continue-on-error: true
 
     - name: post-comments
@@ -111,7 +104,7 @@ runs:
         github.event_name == 'pull_request' ||
         github.event_name == 'pull_request_target'
       env:
-        MY_PLAN: ${{ steps.terraform-plan.outputs.myplan }}
+        MY_PLAN: "terraform\n${{ steps.terraform-plan.outputs.stdout }}"
       uses: actions/github-script@v6
       with:
         script: |
@@ -120,7 +113,7 @@ runs:
           #### Terraform Plan \`${{ steps.terraform-plan.outcome }}\`
           <details><summary>Show Plan</summary>
           \`\`\`bash\n
-          \`${{ steps.terraform-plan.outputs.myplan }}\`
+          ${process.env.MY_PLAN}
           \`\`\`
           </details>
           *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
