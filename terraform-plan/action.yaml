@@ -95,23 +95,24 @@ runs:
         terraform plan -no-color -input=false -lock=false -out .artifacts/terraform.plan
         terraform show -no-color .artifacts/terraform.plan > .artifacts/terraform-plan.txt
         ls -al .artifacts
+        echo "::set-output name=myplan::$(cat .artifacts/terraform-plan.txt)"
       continue-on-error: true
 
     - name: post-comments
       if: |
         github.event_name == 'pull_request' ||
         github.event_name == 'pull_request_target'
+      env:
+        MY_PLAN: ${{ steps.terraform-plan.outputs.myplan }}
       uses: actions/github-script@v6
       with:
         script: |
-          const PLAN=$(cat .artifacts/terraform-plan.txt)
-          echo "Contents of file.txt: $PLAN"
           const output = `#### Terraform Initialization \`${{ steps.init.outcome }}\`
           #### Terraform Validation \`${{ steps.terraform-validate.outcome }}\`
           #### Terraform Plan \`${{ steps.terraform-plan.outcome }}\`
           <details><summary>Show Plan</summary>
           \`\`\`bash\n
-          $PLAN
+          \`${{ steps.terraform-plan.outputs.myplan }}\`
           \`\`\`
           </details>
           *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
