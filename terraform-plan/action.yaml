@@ -109,6 +109,8 @@ runs:
       if: |
         github.event_name == 'pull_request' ||
         github.event_name == 'pull_request_target'
+      env:
+        PLAN: ${{ steps.show-plan.output }}
       uses: actions/github-script@v6
       with:
         script: |
@@ -117,7 +119,7 @@ runs:
           #### Terraform Plan \`${{ steps.terraform-plan.outcome }}\`
           <details><summary>Show Plan</summary>
           \`\`\`bash\n
-          \`${{ steps.show-plan.output }}\`
+          ${{ env.PLAN }}
           \`\`\`
           </details>
           *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
