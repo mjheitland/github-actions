@@ -104,10 +104,14 @@ runs:
       uses: actions/github-script@v6
       with:
         script: |
-          const fs = require('fs')
+          // Please do not remove empty lines below, most of them are needed!
+
+          const fs = require('fs');
+
           const output = `#### Terraform Initialization \`${{ steps.init.outcome }}\`
           #### Terraform Validation \`${{ steps.terraform-validate.outcome }}\`
           #### Terraform Plan \`${{ steps.terraform-plan.outcome }}\`
+
           <details><summary>Show Plan</summary>
 
           \`\`\`bash\n
@@ -115,7 +119,9 @@ runs:
           \`\`\`
 
           </details>
+
           *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
           github.rest.issues.createComment({
             issue_number: context.payload.pull_request.number,
             owner: context.repo.owner,
