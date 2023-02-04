@@ -103,8 +103,6 @@ runs:
       if: |
         github.event_name == 'pull_request' ||
         github.event_name == 'pull_request_target'
-      env:
-        MY_PLAN: "terraform\n${{ steps.terraform-plan.outputs.stdout }}"
       uses: actions/github-script@v6
       with:
         script: |
