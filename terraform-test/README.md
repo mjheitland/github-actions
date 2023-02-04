@@ -85,7 +85,7 @@ jobs:
         uses: mjheitland/github-actions/terraform-validate@v1
 
       - name: assume-role
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           role-to-assume: ${{ secrets.DEPLOY_ROLE }}
           aws-region: ${{ secrets.REGION }}

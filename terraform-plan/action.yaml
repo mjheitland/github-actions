@@ -102,9 +102,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        echo my start
-        echo ${{ steps.terraform-plan.outputs.stdout }}
-        echo my end
+        cat .artifacts/terraform-plan.txt
       continue-on-error: true
 
     - name: post-comments
@@ -112,8 +110,6 @@ runs:
         github.event_name == 'pull_request' ||
         github.event_name == 'pull_request_target'
       uses: actions/github-script@v6
-      env:
-        PLAN: "terraform\n${{ steps.terraform-plan.outputs.stdout }}"
       with:
         script: |
           const output = `#### Terraform Initialization \`${{ steps.init.outcome }}\`
@@ -121,7 +117,7 @@ runs:
           #### Terraform Plan \`${{ steps.terraform-plan.outcome }}\`
           <details><summary>Show Plan</summary>
           \`\`\`bash\n
-          ${process.env.PLAN}
+          \`${{ steps.show-plan.output }}\`
           \`\`\`
           </details>
           *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
