@@ -101,12 +101,10 @@ runs:
       if: |
         github.event_name == 'pull_request' ||
         github.event_name == 'pull_request_target'
-      env:
-        PLAN: ${{ steps.show-plan.output }}
       uses: actions/github-script@v6
       with:
         script: |
-          const PLAN=$(.artifacts/terraform-plan.txt)
+          const PLAN=$(cat .artifacts/terraform-plan.txt)
           echo "Contents of file.txt: $PLAN"
           const output = `#### Terraform Initialization \`${{ steps.init.outcome }}\`
           #### Terraform Validation \`${{ steps.terraform-validate.outcome }}\`
