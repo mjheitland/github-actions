@@ -2,8 +2,8 @@ name: terraform-plan
 
 description: |
   This action is usually run on Pull Request creation and updates.
-  It is a pipeline run `terraform plan`.
-  It includes a validation step using several static code analyzers.
+  It is a pipeline to run `terraform plan`.
+  It includes an optional validation step using several static code analyzers.
 
 inputs:
 
@@ -44,18 +44,6 @@ runs:
   using: composite
 
   steps:
-    - name: create-plan-as-issue
-      id: create-plan-as-issue
-      uses: actions/github-script@v6
-      with:
-        script: |
-          await github.rest.issues.createComment({
-            issue_number: context.payload.pull_request.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: 'Thank you for the PR!'
-          });
-
     - name: prepare
       id: prepare
       shell: bash
@@ -99,8 +87,8 @@ runs:
         github-token: ${{ inputs.github-token }}
         terraform-version: ${{ inputs.terraform-version }}
 
-    - name: plan
-      id: plan
+    - name: terraform-plan
+      id: terraform-plan
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
@@ -118,18 +106,18 @@ runs:
         PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
       with:
         script: |
-          const output = `#### Terraform Format and Style \`${{ steps.fmt.outcome }}\`
+          const output =
           #### Terraform Initialization \`${{ steps.init.outcome }}\`
-          #### Terraform Validation \`${{ steps.validate.outcome }}\`
-          #### Terraform Plan \`${{ steps.plan.outcome }}\`
+          #### Terraform Validation \`${{ steps.terraform-validate.outcome }}\`
+          #### Terraform Plan \`${{ steps.terraform-plan.outcome }}\`
           <details><summary>Show Plan</summary>
           \`\`\`\n
           ${process.env.PLAN}
           \`\`\`
           </details>
           *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
+          await github.rest.issues.createComment({
+            issue_number: context.payload.pull_request.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
             body: output
@@ -146,9 +134,9 @@ runs:
       id: exit-on-error
       shell: bash
       if: |
-        steps.plan.outcome == 'failure'
+        steps.terraform-plan.outcome == 'failure'
       run: |
         printf 'ERROR - One or more steps failed in this pipeline.\n'
         printf 'Results:\n'
-        printf 'Step "plan"             : %s\n' "${{ steps.plan.outcome }}"
+        printf 'Step "plan"             : %s\n' "${{ steps.terraform-plan.outcome }}"
         exit 1
