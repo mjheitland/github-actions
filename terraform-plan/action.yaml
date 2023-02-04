@@ -103,14 +103,14 @@ runs:
         github.event_name == 'pull_request_target'
       uses: actions/github-script@v6
       env:
-        PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        PLAN: "terraform\n${{ steps.terraform-plan.outputs.stdout }}"
       with:
         script: |
           const output = `#### Terraform Initialization \`${{ steps.init.outcome }}\`
           #### Terraform Validation \`${{ steps.terraform-validate.outcome }}\`
           #### Terraform Plan \`${{ steps.terraform-plan.outcome }}\`
           <details><summary>Show Plan</summary>
-          \`\`\`\n
+          \`\`\`bash\n
           ${process.env.PLAN}
           \`\`\`
           </details>
