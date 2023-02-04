@@ -96,7 +96,7 @@ runs:
         terraform show -no-color .artifacts/terraform.plan > .artifacts/terraform-plan.txt
         ls -al .artifacts
         echo "MY_PLAN=$(cat .artifacts/terraform-plan.txt)"
-        echo "MY_PLAN=$(cat .artifacts/terraform-plan.txt)" >> $GITHUB_ENV
+        echo "MY_PLAN='$(cat .artifacts/terraform-plan.txt | tr -d "'")'" >> $GITHUB_ENV
       continue-on-error: true
 
     - name: post-comments
