@@ -21,6 +21,12 @@ inputs:
     default: .artifacts/terraform.plan
     required: false
 
+  run-terraform-apply-with-destroy-option:
+    description: |
+      Do you want to run `terraform apply` with `-destroy` option?
+    default: 'false'
+    required: false
+
   working-directory:
     description: Directory containing the Terraform module code. (default = ".")
     default: '.'
@@ -81,7 +87,13 @@ runs:
         fi
 
         terraform show -no-color ${{ inputs.plan-file }}
-        terraform apply -no-color -auto-approve -input=false ${{ inputs.plan-file }} | tee .artifacts/terraform-apply.txt
+
+        destroy=${{ inputs.run-terraform-plan-with-destroy-option }}
+        if [[ "$destroy" == "true" ]]; then
+          terraform apply -destroy -no-color -auto-approve -input=false ${{ inputs.plan-file }} | tee .artifacts/terraform-apply.txt
+        else
+          terraform apply -no-color -auto-approve -input=false ${{ inputs.plan-file }} | tee .artifacts/terraform-apply.txt
+        fi
 
     - name: output
       id: output

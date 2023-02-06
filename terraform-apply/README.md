@@ -26,6 +26,10 @@ It runs the following steps:
     # Required: No
     plan-file: .artifacts/terraform.plan
 
+    # Do you want to run `terraform apply` with `-destroy` option?
+    # Required: No
+    run-terraform-apply-with-destroy-option: 'false'
+
     # The relative path in the repository that hosts the terraform code.
     # Default: . (root of the repository)
     # Required: No
