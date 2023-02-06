@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.7](https://github.com/mjheitland/github-actions/compare/v1.0.6...v1.0.7) (2023-02-06)
+
+
+### Bug Fixes
+
+* add terraform-docs and tflint actions ([6e96e82](https://github.com/mjheitland/github-actions/commit/6e96e822d047533fc697736f66a42f15fe07aea7))
+
 ## [1.0.6](https://github.com/mjheitland/github-actions/compare/v1.0.5...v1.0.6) (2023-01-23)
 
 
