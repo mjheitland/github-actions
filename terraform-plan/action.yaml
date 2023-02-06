@@ -18,6 +18,12 @@ inputs:
     required: false
     default: ${{ github.token }}
 
+  run-terraform-plan-with-destroy-option:
+    description: |
+      Do you want to run `terraform plan` with `-destroy` option?
+    default: 'false'
+    required: false
+
   run-terraform-validate:
     description: |
       Before running `terraform plan`, do a static code analysis by running `terraform-validate`
@@ -92,7 +98,13 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        terraform plan -no-color -input=false -lock=false -out .artifacts/terraform.plan
+        destroy=${{ inputs.run-terraform-plan-with-destroy-option }}
+        if [[ "$destroy" == "true" ]]; then
+          terraform plan -destroy -no-color -input=false -lock=false -out .artifacts/terraform.plan
+        else
+          terraform plan -no-color -input=false -lock=false -out .artifacts/terraform.plan
+        fi
+
         terraform show -no-color .artifacts/terraform.plan > .artifacts/terraform-plan.txt
         ls -al .artifacts
       continue-on-error: true

@@ -25,6 +25,10 @@ It runs the following steps:
     # Required: No
     github-token: ${{ github.token }}
 
+    # Do you want to run `terraform plan` with `-destroy` option?
+    # Required: No
+    run-terraform-plan-with-destroy-option: 'false'
+
     # Before running `terraform plan`, do a static code analysis by running `terraform-validate`
     # Required: No
     run-terraform-validate: 'true'
