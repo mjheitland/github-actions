@@ -1,6 +1,7 @@
 # terraform-apply
 
 > Action to run terraform apply for a root module based on an existing Terraform plan file.
+  This aciton can also be used to destroy your resources by setting `run-terraform-apply-with-destroy-option` to `true`.
 
 It runs the following steps:
 
